@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Yash Ajay Datir | Bare-Metal Portfolio Simulator</title>
+<style>
+  :root {
+    --vga-black: #000000;
+    --vga-blue: #0000AA;
+    --vga-green: #00AA00;
+    --vga-cyan: #00AAAA;
+    --vga-red: #AA0000;
+    --vga-grey: #AAAAAA;
+    --vga-yellow: #FFFF55;
+    --vga-white: #FFFFFF;
+    --vga-light-green: #55FF55;
+    --vga-light-red: #FF5555;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+  }
+
+  body {
+    background-color: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: "Courier New", Courier, monospace;
+    overflow: hidden;
+  }
+
+  /* 80 columns x 25 rows display container */
+  #crt-monitor {
+    position: relative;
+    width: 800px;
+    height: 500px;
+    background-color: var(--vga-black);
+    border: 4px solid #333;
+    border-radius: 6px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+    display: grid;
+    grid-template-rows: repeat(25, 20px);
+    grid-template-columns: repeat(80, 10px);
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  /* Character cell */
+  .cell {
+    width: 10px;
+    height: 20px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  /* Scanline CRT overlay */
+  .crt-scanlines {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%);
+    background-size: 100% 4px;
+    z-index: 10;
+  }
+</style>
+</head>
+<body>
+
+<div id="crt-monitor">
+  <div class="crt-scanlines"></div>
+</div>
+
+<script>
+  const VGA_WIDTH = 80;
+  const VGA_HEIGHT = 25;
+
+  // Exact VGA color codes mapped to CSS variables
+  const COLOR_PALETTE = {
+    0x0: "var(--vga-black)",
+    0x1: "var(--vga-blue)",
+    0x2: "var(--vga-green)",
+    0x3: "var(--vga-cyan)",
+    0x4: "var(--vga-red)",
+    0x7: "var(--vga-grey)",
+    0xA: "var(--vga-light-green)",
+    0xB: "var(--vga-cyan)",
+    0xC: "var(--vga-light-red)",
+    0xE: "var(--vga-yellow)",
+    0xF: "var(--vga-white)"
+  };
+
+  const COLOR_TOPBAR    = { fg: 0xF, bg: 0x1 };
+  const COLOR_BOTTOMBAR = { fg: 0x0, bg: 0x7 };
+  const COLOR_BG        = { fg: 0x7, bg: 0x0 };
+  const COLOR_TITLE     = { fg: 0xE, bg: 0x0 };
+  const COLOR_SUBTITLE  = { fg: 0xB, bg: 0x0 };
+  const COLOR_WHITE     = { fg: 0xF, bg: 0x0 };
+  const COLOR_ACCENT    = { fg: 0xA, bg: 0x0 };
+  const COLOR_TAB_ACT   = { fg: 0xF, bg: 0x2 };
+  const COLOR_TAB_INAC  = { fg: 0x7, bg: 0x1 };
+  const COLOR_APPLE     = { fg: 0xC, bg: 0x0 };
+  const COLOR_SNAKE     = { fg: 0xA, bg: 0x0 };
+
+  const tabs = ["Summary", "Experience", "Skills", "Projects", "Education", "Snake [Game]"];
+  let currentTab = 0;
+
+  // Screen Grid Initialization
+  const monitor = document.getElementById("crt-monitor");
+  const cells = [];
+
+  for (let y = 0; y < VGA_HEIGHT; y++) {
+    cells[y] = [];
+    for (let x = 0; x < VGA_WIDTH; x++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = " ";
+      monitor.appendChild(cell);
+      cells[y][x] = cell;
+    }
+  }
+
+  function writeChar(x, y, char, colorScheme) {
+    if (x >= 0 && x < VGA_WIDTH && y >= 0 && y < VGA_HEIGHT) {
+      const cell = cells[y][x];
+      cell.textContent = char;
+      cell.style.color = COLOR_PALETTE[colorScheme.fg];
+      cell.style.backgroundColor = COLOR_PALETTE[colorScheme.bg];
+    }
+  }
+
+  function writeString(x, y, text, colorScheme) {
+    for (let i = 0; i < text.length && x + i < VGA_WIDTH; i++) {
+      writeChar(x + i, y, text[i], colorScheme);
+    }
+  }
+
+  function fillRow(y, char, colorScheme) {
+    for (let x = 0; x < VGA_WIDTH; x++) {
+      writeChar(x, y, char, colorScheme);
+    }
+  }
+
+  function clearViewport() {
+    for (let y = 2; y < VGA_HEIGHT - 1; y++) {
+      fillRow(y, " ", COLOR_BG);
+    }
+  }
+
+  function drawFrame() {
+    // Row 0: Top Bar
+    fillRow(0, " ", COLOR_TOPBAR);
+    writeString(2, 0, "YASH AJAY DATIR | Software Developer", COLOR_TOPBAR);
+    writeString(52, 0, "yashdatir@gmail.com", COLOR_TOPBAR);
+
+    // Row 1: Tab Navigation Bar
+    fillRow(1, " ", COLOR_TAB_INAC);
+    let tabX = 1;
+    for (let i = 0; i < tabs.length; i++) {
+      if (i === currentTab) {
+        writeString(tabX, 1, "[" + tabs[i] + "]", COLOR_TAB_ACT);
+      } else {
+        writeString(tabX + 1, 1, tabs[i], COLOR_TAB_INAC);
+      }
+      tabX += 13;
+    }
+
+    // Row 24: Status Bar
+    fillRow(24, " ", COLOR_BOTTOMBAR);
+    if (currentTab === 5) {
+      writeString(2, 24, "Arrow Keys: Steer Snake | [TAB]: Switch Tabs | [R]: Restart", COLOR_BOTTOMBAR);
+    } else {
+      writeString(2, 24, "<- / -> or [TAB]: Switch Tabs | LinkedIn: in/yash-datir-a99237121", COLOR_BOTTOMBAR);
+    }
+  }
+
+  // --- Snake Game Logic ---
+  const ARENA = { x1: 10, x2: 68, y1: 4, y2: 22 };
+  let snake = [];
+  let dirX = 1, dirY = 0;
+  let apple = { x: 30, y: 10 };
+  let score = 0;
+  let gameInterval = null;
+
+  function spawnApple() {
+    apple.x = ARENA.x1 + 1 + Math.floor(Math.random() * (ARENA.x2 - ARENA.x1 - 2));
+    apple.y = ARENA.y1 + 1 + Math.floor(Math.random() * (ARENA.y2 - ARENA.y1 - 2));
+  }
+
+  function initSnake() {
+    snake = [
+      { x: 25, y: 12 },
+      { x: 24, y: 12 },
+      { x: 23, y: 12 },
+      { x: 22, y: 12 }
+    ];
+    dirX = 1;
+    dirY = 0;
+    score = 0;
+    spawnApple();
+  }
+
+  function drawSnakeArena() {
+    clearViewport();
+    writeString(ARENA.x1, 3, "SNAKE MINI-GAME - Eat apples to grow!", COLOR_TITLE);
+    writeString(ARENA.x2 - 12, 3, "Score: " + score, COLOR_ACCENT);
+
+    // Borders
+    for (let x = ARENA.x1; x <= ARENA.x2; x++) {
+      writeChar(x, ARENA.y1, "#", COLOR_WHITE);
+      writeChar(x, ARENA.y2, "#", COLOR_WHITE);
+    }
+    for (let y = ARENA.y1; y <= ARENA.y2; y++) {
+      writeChar(ARENA.x1, y, "#", COLOR_WHITE);
+      writeChar(ARENA.x2, y, "#", COLOR_WHITE);
+    }
+
+    // Apple
+    writeChar(apple.x, apple.y, "*", COLOR_APPLE);
+
+    // Snake
+    snake.forEach((segment, idx) => {
+      writeChar(segment.x, segment.y, idx === 0 ? "O" : "o", COLOR_SNAKE);
+    });
+  }
+
+  function updateSnake() {
+    const nextHead = { x: snake[0].x + dirX, y: snake[0].y + dirY };
+
+    // Wall Collision
+    if (nextHead.x <= ARENA.x1 || nextHead.x >= ARENA.x2 || nextHead.y <= ARENA.y1 || nextHead.y >= ARENA.y2) {
+      initSnake();
+      drawSnakeArena();
+      return;
+    }
+
+    // Self Collision
+    for (let i = 0; i < snake.length; i++) {
+      if (snake[i].x === nextHead.x && snake[i].y === nextHead.y) {
+        initSnake();
+        drawSnakeArena();
+        return;
+      }
+    }
+
+    const ateApple = (nextHead.x === apple.x && nextHead.y === apple.y);
+
+    if (!ateApple) {
+      const tail = snake.pop();
+      writeChar(tail.x, tail.y, " ", COLOR_BG);
+    } else {
+      score += 10;
+      writeString(ARENA.x2 - 12, 3, "Score: " + score, COLOR_ACCENT);
+      spawnApple();
+      writeChar(apple.x, apple.y, "*", COLOR_APPLE);
+    }
+
+    snake.unshift(nextHead);
+    writeChar(snake[0].x, snake[0].y, "O", COLOR_SNAKE);
+    if (snake.length > 1) {
+      writeChar(snake[1].x, snake[1].y, "o", COLOR_SNAKE);
+    }
+  }
+
+  // --- Tab Contents ---
+  function renderContent() {
+    if (gameInterval) {
+      clearInterval(gameInterval);
+      gameInterval = null;
+    }
+
+    clearViewport();
+
+    if (currentTab === 0) {
+      writeString(4, 4, "=== ENGINEER BEHIND THE SCREENS ===", COLOR_TITLE);
+      writeString(4, 6, "Hi, I'm Yash. I bridge the gap between pixel-perfect frontends", COLOR_WHITE);
+      writeString(4, 7, "and raw machine code.", COLOR_WHITE);
+
+      writeString(4, 9, "\"I don't just write scripts; I build software that breathes.", COLOR_ACCENT);
+      writeString(5, 10, " Whether architecting reactive UIs with React/Flutter, designing", COLOR_ACCENT);
+      writeString(5, 11, " cloud APIs with Node/GraphQL, or tinkering down here in 32-bit", COLOR_ACCENT);
+      writeString(5, 12, " protected mode bare-metal assembly, I'm driven by one thing:", COLOR_ACCENT);
+      writeString(5, 13, " crafting resilient, thoughtful digital products from the ground up.\"", COLOR_ACCENT);
+
+      writeString(4, 15, "Current Focus:", COLOR_SUBTITLE);
+      writeString(6, 16, "- Fullstack Product Development & Cloud Infrastructure (GCP)", COLOR_WHITE);
+      writeString(6, 17, "- Low-level Systems Exploration & Embedded Experiments", COLOR_WHITE);
+
+      writeString(4, 19, "Direct Contact:", COLOR_SUBTITLE);
+      writeString(6, 20, "Location: Bengaluru, KA  |  Phone: (+91) 7990097420", COLOR_WHITE);
+      writeString(6, 21, "Email: yashdatir@gmail.com", COLOR_WHITE);
+    }
+    else if (currentTab === 1) {
+      writeString(4, 3, "=== EMPLOYMENT HISTORY ===", COLOR_TITLE);
+
+      writeString(4, 5, "1. SmartQ - Bottle Labs Tech. (June 2022 - Present)", COLOR_SUBTITLE);
+      writeString(7, 6, "Role: Software Developer | Bengaluru, KA", COLOR_WHITE);
+      writeString(7, 7, "* Implemented Loyalty & Rewards (Campaigns, Stamps, Points)", COLOR_ACCENT);
+      writeString(7, 8, "* Revamped User Management module, increasing UX & auth efficiency", COLOR_ACCENT);
+
+      writeString(4, 11, "2. IntellimediaNetworks (April 2021 - June 2022)", COLOR_SUBTITLE);
+      writeString(7, 12, "Role: Software Engineer | Ahmedabad, GJ", COLOR_WHITE);
+      writeString(7, 13, "* Mobile development on Madly App & FittrApp using Flutter", COLOR_ACCENT);
+      writeString(7, 14, "* Contributed to LiveU Matrix enterprise software & Hasura/GraphQL", COLOR_ACCENT);
+
+      writeString(4, 17, "3. Xelpmoc Design and Tech. (January 2020 - April 2021)", COLOR_SUBTITLE);
+      writeString(7, 18, "Role: Fullstack Developer | Bengaluru, KA", COLOR_WHITE);
+      writeString(7, 19, "* Developed Rentickle Web in ReactJS (+20% user engagement)", COLOR_ACCENT);
+      writeString(7, 20, "* Built Knack Web data visualization dashboards using ExpressJS", COLOR_ACCENT);
+    }
+    else if (currentTab === 2) {
+      writeString(4, 3, "=== TECHNICAL COMPETENCIES ===", COLOR_TITLE);
+
+      writeString(4, 5, "Frontend & Mobile:", COLOR_SUBTITLE);
+      writeString(6, 6, "JavaScript (ES6+), TypeScript, ReactJS, NextJS, Flutter, Redux, Dart", COLOR_WHITE);
+
+      writeString(4, 9, "Backend, APIs & Cloud:", COLOR_SUBTITLE);
+      writeString(6, 10, "Node.js, ExpressJS, GraphQL, Hasura, GCP, AWS, RESTful Services", COLOR_WHITE);
+
+      writeString(4, 13, "Systems, Desktop & Languages:", COLOR_SUBTITLE);
+      writeString(6, 14, "C/C++, Core & Advanced Java, Python, ElectronJS, Robotics", COLOR_WHITE);
+
+      writeString(4, 17, "DevOps, OS & Certifications:", COLOR_SUBTITLE);
+      writeString(6, 18, "Linux Administration, Git, Basic Networking", COLOR_WHITE);
+      writeString(6, 19, "Certification: RHCE (Red Hat Certified Engineer)", COLOR_ACCENT);
+    }
+    else if (currentTab === 3) {
+      writeString(4, 4, "=== NOTABLE PROJECTS ===", COLOR_TITLE);
+
+      writeString(4, 6, "1. Web OS (Aug 2021 - Jan 2023)", COLOR_SUBTITLE);
+      writeString(7, 7, "* Transformed any low-resource device into an interactive desktop.", COLOR_WHITE);
+      writeString(7, 8, "* Optimized for resource-constrained environments like Raspberry Pi.", COLOR_ACCENT);
+
+      writeString(4, 11, "2. Personal Portfolio using Chatbot & ThreeJS (Dec 2023 - Present)", COLOR_SUBTITLE);
+      writeString(7, 12, "* 3D portfolio exploration combined with an AI-driven chatbot.", COLOR_WHITE);
+      writeString(7, 13, "* Demonstrates modern spatial web presentation and conversational AI.", COLOR_ACCENT);
+
+      writeString(4, 16, "3. Bare-Metal Portfolio OS (You Are Currently Running It!)", COLOR_SUBTITLE);
+      writeString(7, 17, "* Written in C and x86 Assembly running directly on CPU silicon.", COLOR_WHITE);
+      writeString(7, 18, "* 0% OS dependencies. 100% Bare-Metal.", COLOR_ACCENT);
+    }
+    else if (currentTab === 4) {
+      writeString(4, 4, "=== ACADEMIC BACKGROUND ===", COLOR_TITLE);
+
+      writeString(4, 6, "Bachelor of Engineering (GTU)", COLOR_SUBTITLE);
+      writeString(6, 7, "Neotech Institute of Technology | Vadodara, GJ", COLOR_WHITE);
+      writeString(6, 8, "Graduated: 2020", COLOR_ACCENT);
+
+      writeString(4, 11, "Higher Secondary Examination (GSHSEB)", COLOR_SUBTITLE);
+      writeString(6, 12, "Tejas Vidyalaya | Vadodara, GJ", COLOR_WHITE);
+      writeString(6, 13, "Completed: 2016", COLOR_ACCENT);
+
+      writeString(4, 16, "Secondary School Examination (GSHSEB)", COLOR_SUBTITLE);
+      writeString(6, 17, "Gujarat Refinery English Medium School | Vadodara, GJ", COLOR_WHITE);
+      writeString(6, 18, "Completed: 2014", COLOR_ACCENT);
+    }
+    else if (currentTab === 5) {
+      initSnake();
+      drawSnakeArena();
+      gameInterval = setInterval(updateSnake, 120);
+    }
+  }
+
+  // --- Keyboard Event Dispatcher ---
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      currentTab = (currentTab + 1) % tabs.length;
+      drawFrame();
+      renderContent();
+    } 
+    else if (e.key === "ArrowRight") {
+      if (currentTab !== 5) {
+        currentTab = (currentTab + 1) % tabs.length;
+        drawFrame();
+        renderContent();
+      } else if (dirX === 0) {
+        dirX = 1; dirY = 0;
+      }
+    } 
+    else if (e.key === "ArrowLeft") {
+      if (currentTab !== 5) {
+        currentTab = (currentTab - 1 + tabs.length) % tabs.length;
+        drawFrame();
+        renderContent();
+      } else if (dirX === 0) {
+        dirX = -1; dirY = 0;
+      }
+    } 
+    else if (e.key === "ArrowUp" && currentTab === 5) {
+      if (dirY === 0) { dirX = 0; dirY = -1; }
+    } 
+    else if (e.key === "ArrowDown" && currentTab === 5) {
+      if (dirY === 0) { dirX = 0; dirY = 1; }
+    } 
+    else if ((e.key === "r" || e.key === "R") && currentTab === 5) {
+      initSnake();
+      drawSnakeArena();
+    }
+  });
+
+  // Initial draw
+  drawFrame();
+  renderContent();
+</script>
+
+</body>
+</html>

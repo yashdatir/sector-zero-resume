@@ -95,10 +95,13 @@
         window.V86Starter;
     } catch (err) {
       console.error("Error importing ./libv86.js:", err);
+      window.location.href = BASE_URL + "fallback.html"; // Redirect to fallback.html if import fails
+      return;
     }
 
     if (!Starter) {
       console.error("Could not find V86 or V86Starter constructor in ./libv86.js");
+      window.location.href = BASE_URL + "fallback.html"; // Redirect to fallback.html if constructor is not found
       return;
     }
 
