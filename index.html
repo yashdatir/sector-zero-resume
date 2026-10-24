@@ -2,8 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Yash Ajay Datir | Bare-Metal Portfolio (v86)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="./icon.png">
+<title>Sector-Zero-Resume | Bare-Metal x86 Portfolio</title>
 <style>
+  :root {
+    --chassis-base: #1b1c1e;
+    --chassis-bezel: #26282c;
+    --chassis-border: #383c44;
+    --crt-bg: #000000;
+    --accent-amber: #ffb000;
+    --accent-green: #39ff14;
+    --accent-blue: #38bdf8;
+    --text-muted: #8b949e;
+    --text-main: #e6edf3;
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -11,115 +25,414 @@
   }
 
   body {
-    background-color: #0d0d0d;
-    color: #e0e0e0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #0b0c0e;
+    background-image: 
+      radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+      radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+    background-size: 100% 100%, 24px 24px;
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
+    padding: 24px 16px;
+    user-select: none;
   }
 
-  .terminal-wrapper {
-    position: relative;
-    padding: 16px;
-    background: #1c1c1c;
+  .meta-header {
+    width: 100%;
+    max-width: 820px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .project-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge-tag {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--accent-blue);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 3px 5px;
+    border-radius: 4px;
+  }
+
+  .project-title h1 {
+    font-size: 18px;
+    letter-spacing: -0.3px;
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .header-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--text-main);
+    background: #181a1e;
+    border: 1px solid var(--chassis-border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .btn-link:hover {
+    background: #24272e;
+    border-color: #555c69;
+    color: #fff;
+    transform: translateY(-1px);
+  }
+
+  .workstation-chassis {
+    width: 100%;
+    max-width: 820px;
+    background: linear-gradient(180deg, #23252a 0%, #17181b 100%);
+    border: 2px solid var(--chassis-border);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 
+      0 20px 50px rgba(0, 0, 0, 0.9),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .bezel-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 0 4px;
+  }
+
+  .power-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .led {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+    animation: pulse 2s infinite ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; filter: drop-shadow(0 0 4px var(--accent-green)); }
+  }
+
+  .screen-bezel {
+    background: #000;
     border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 2px #333;
+    padding: 10px;
+    box-shadow: 
+      0 0 0 4px #121315 inset,
+      0 6px 12px rgba(0, 0, 0, 0.8) inset;
+    display: flex;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
   }
 
   #screen_container {
-    background-color: #000;
-    width: 720px;
-    height: 400px;
+    background-color: var(--crt-bg);
     overflow: hidden;
-    border: 2px solid #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    cursor: default;
   }
 
   #screen_container span {
     font-family: "Courier New", Courier, monospace !important;
     font-size: 16px !important;
     line-height: 16px !important;
+    letter-spacing: 0px !important;
     white-space: pre;
   }
 
-  .instructions {
-    margin-top: 14px;
-    font-size: 13px;
-    color: #888;
-    text-align: center;
+  .crt-scanlines {
+    position: absolute;
+    inset: 12px;
+    pointer-events: none;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.28) 50%);
+    background-size: 100% 4px;
+    border-radius: 4px;
+    opacity: 0.7;
+    z-index: 5;
   }
 
-  .instructions kbd {
-    background: #2a2a2a;
-    border: 1px solid #444;
+  .deck-controls {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .telemetry-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .telemetry-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .telemetry-val {
+    color: var(--text-main);
+  }
+
+  .keypad-dock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hw-btn {
+    background: linear-gradient(180deg, #2d3036 0%, #1e2024 100%);
+    border: 1px solid #454952;
+    color: var(--text-main);
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.08) inset;
+    transition: all 0.1s ease;
+  }
+
+  .hw-btn:hover {
+    background: #343840;
+    color: #fff;
+  }
+
+  .hw-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 0 2px rgba(0,0,0,0.8);
+  }
+
+  .dpad-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 28px);
+    grid-template-rows: repeat(2, 26px);
+    gap: 4px;
+  }
+
+  .dpad-btn {
+    background: linear-gradient(180deg, #2d3036 0%, #1e2024 100%);
+    border: 1px solid #454952;
+    color: #fff;
+    font-size: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 2px 3px rgba(0,0,0,0.4);
+  }
+
+  .dpad-btn:active {
+    transform: translateY(1px);
+  }
+
+  .dpad-up    { grid-column: 2; grid-row: 1; }
+  .dpad-left  { grid-column: 1; grid-row: 2; }
+  .dpad-down  { grid-column: 2; grid-row: 2; }
+  .dpad-right { grid-column: 3; grid-row: 2; }
+
+  .audio-indicator {
+    text-align: right;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .audio-indicator span {
+    color: var(--accent-amber);
+  }
+
+  .hotkey-hints {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hotkey-hints kbd {
+    background: #181a1e;
+    border: 1px solid var(--chassis-border);
     border-radius: 4px;
     padding: 2px 6px;
-    color: #eee;
+    color: var(--text-main);
     font-family: monospace;
+    font-size: 11px;
   }
 </style>
 </head>
 <body>
 
-<div class="terminal-wrapper">
-  <div id="screen_container">
-    <div style="white-space: pre; font: 16px monospace; line-height: 16px"></div>
-    <canvas style="display: none"></canvas>
-  </div>
-</div>
+  <header class="meta-header">
+    <div class="project-title">
+      <h1>Yash Ajay Datir</h1>
+      <span class="badge-tag">Software Developer</span>
+    </div>
 
-<p class="instructions">
-  Click terminal to capture input | Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>Tab</kbd> to switch tabs
-</p>
+    <div class="header-links">
+      <a href="portfolio.img" download="portfolio.img" class="btn-link" title="Download raw bootable floppy disk image">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download .IMG
+      </a>
+    
+      <a href="https://github.com/yashdatir" target="_blank" rel="noopener noreferrer" class="btn-link">
+        GitHub
+      </a>
+    
+      <a href="https://linkedin.com/in/yash-datir-a99237121" target="_blank" rel="noopener noreferrer" class="btn-link">
+        LinkedIn
+      </a>
+    </div>
+  </header>
 
-<!-- Load using ES Module semantics directly from local files -->
-<script type="module">
-  const BASE_URL = "./"; // Adjust this if your files are in a different directory
-  async function boot() {
-    let Starter = null;
+  <main class="workstation-chassis">
+    
+    <div class="bezel-topbar">
+      <div class="power-status">
+        <div class="led"></div>
+        <span>Running live...</span>
+      </div>
+      <div>Memory: 1.5 MB</div>
+    </div>
 
-    try {
-      const v86Mod = await import("./libv86.js");
+    <div class="screen-bezel">
+      <div class="crt-scanlines"></div>
+      <div id="screen_container">
+        <div style="white-space: pre; font: 16px monospace; line-height: 16px"></div>
 
-      // Check all possible export shapes:
-      Starter =
-        v86Mod.V86 ||
-        v86Mod.V86Starter ||
-        v86Mod.default?.V86 ||
-        v86Mod.default?.V86Starter ||
-        (typeof v86Mod.default === "function" ? v86Mod.default : null) ||
-        window.V86 ||
-        window.V86Starter;
-    } catch (err) {
-      console.error("Error importing ./libv86.js:", err);
-      window.location.href = BASE_URL + "fallback.html"; // Redirect to fallback.html if import fails
-      return;
+        <canvas style="display: none"></canvas>
+      </div>
+    </div>
+
+    <div class="deck-controls">
+      <div class="telemetry-block">
+        <div class="telemetry-row"><span>BIOS:</span> <span class="telemetry-val">SeaBIOS x86</span></div>
+
+        <div class="telemetry-row"><span>PLATFORM:</span> <span class="telemetry-val">libv86 - JavaScript x86 Emulator - v86 WASM</span></div>
+      </div>
+
+      <div class="keypad-dock">
+        <button class="hw-btn" id="btn-tab" title="Cycle tabs forward">TAB</button>
+
+        <button class="hw-btn" id="btn-restart" title="Restart Snake game (R)">RST (R)</button>
+          
+        <button class="hw-btn" id="btn-left">◀</button>
+          
+        <button class="hw-btn" id="btn-right">▶</button>
+      </div>
+
+      <div class="audio-indicator">
+        <div>AUDIO: <span>ONLINE</span></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+    const BASE_URL = "./";
+    let emulatorInstance = null;
+
+    async function boot() {
+      let Starter = null;
+      try {
+        const v86Mod = await import(BASE_URL + "libv86.js");
+        Starter =
+          v86Mod.V86 ||
+          v86Mod.V86Starter ||
+          v86Mod.default?.V86 ||
+          v86Mod.default?.V86Starter ||
+          (typeof v86Mod.default === "function" ? v86Mod.default : null) ||
+          window.V86 ||
+          window.V86Starter;
+      } catch (err) {
+        console.error("Error importing " + BASE_URL + "libv86.js:", err);
+        window.location.href = BASE_URL + "fallback.html";
+      }
+
+      if (!Starter) {
+        console.error("Could not find V86 constructor.");
+        window.location.href = BASE_URL + "fallback.html";
+        return;
+      }
+
+      emulatorInstance = new Starter({
+        wasm_path: BASE_URL + "v86.wasm",
+        memory_size: 16 * 1024 * 1024,
+        vga_memory_size: 2 * 1024 * 1024,
+        screen_container: document.getElementById("screen_container"),
+        bios: { url: BASE_URL + "seabios.bin" },
+        vga_bios: { url: BASE_URL + "vgabios.bin" },
+        fda: { url: BASE_URL + "portfolio.img" },
+        autostart: true,
+        speaker: true
+      });
+
+      setupVirtualKeypad();
     }
 
-    if (!Starter) {
-      console.error("Could not find V86 or V86Starter constructor in ./libv86.js");
-      window.location.href = BASE_URL + "fallback.html"; // Redirect to fallback.html if constructor is not found
-      return;
+    function sendKey(keyCode) {
+      if (!emulatorInstance) return;
+      emulatorInstance.keyboard_send_scancodes([keyCode]);
     }
 
-    const emulator = new Starter({
-      wasm_path: BASE_URL + "v86.wasm",
-      memory_size: 16 * 1024 * 1024,
-      vga_memory_size: 2 * 1024 * 1024,
-      screen_container: document.getElementById("screen_container"),
-      bios: { url: BASE_URL + "seabios.bin" },
-      vga_bios: { url: BASE_URL + "vgabios.bin" },
-      fda: { url: BASE_URL + "portfolio.img" },
-      autostart: true,
-      speaker: true,
-    });
-  }
+    function setupVirtualKeypad() {
+      document.getElementById("btn-tab")?.addEventListener("click", () => sendKey(0x0F));
+      document.getElementById("btn-restart")?.addEventListener("click", () => sendKey(0x13));
+      document.getElementById("btn-up")?.addEventListener("click", () => sendKey(0x48));
+      document.getElementById("btn-left")?.addEventListener("click", () => sendKey(0x4B));
+      document.getElementById("btn-down")?.addEventListener("click", () => sendKey(0x50));
+      document.getElementById("btn-right")?.addEventListener("click", () => sendKey(0x4D));
+    }
 
-  boot();
-</script>
-
+    boot();
+  </script>
 </body>
 </html>
