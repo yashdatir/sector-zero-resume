@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Yash Ajay Datir | Bare-Metal Portfolio (v86)</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #0d0d0d;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .terminal-wrapper {
+    position: relative;
+    padding: 16px;
+    background: #1c1c1c;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 0 2px #333;
+  }
+
+  #screen_container {
+    background-color: #000;
+    width: 720px;
+    height: 400px;
+    overflow: hidden;
+    border: 2px solid #222;
+  }
+
+  #screen_container span {
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 16px !important;
+    line-height: 16px !important;
+    white-space: pre;
+  }
+
+  .instructions {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #888;
+    text-align: center;
+  }
+
+  .instructions kbd {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #eee;
+    font-family: monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal-wrapper">
+  <div id="screen_container">
+    <div style="white-space: pre; font: 16px monospace; line-height: 16px"></div>
+    <canvas style="display: none"></canvas>
+  </div>
+</div>
+
+<p class="instructions">
+  Click terminal to capture input | Use <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>Tab</kbd> to switch tabs
+</p>
+
+<!-- Load using ES Module semantics directly from local files -->
+<script type="module">
+  const BASE_URL = "./"; // Adjust this if your files are in a different directory
+  async function boot() {
+    let Starter = null;
+
+    try {
+      const v86Mod = await import("./libv86.js");
+
+      // Check all possible export shapes:
+      Starter =
+        v86Mod.V86 ||
+        v86Mod.V86Starter ||
+        v86Mod.default?.V86 ||
+        v86Mod.default?.V86Starter ||
+        (typeof v86Mod.default === "function" ? v86Mod.default : null) ||
+        window.V86 ||
+        window.V86Starter;
+    } catch (err) {
+      console.error("Error importing ./libv86.js:", err);
+    }
+
+    if (!Starter) {
+      console.error("Could not find V86 or V86Starter constructor in ./libv86.js");
+      return;
+    }
+
+    const emulator = new Starter({
+      wasm_path: BASE_URL + "v86.wasm",
+      memory_size: 16 * 1024 * 1024,
+      vga_memory_size: 2 * 1024 * 1024,
+      screen_container: document.getElementById("screen_container"),
+      bios: { url: BASE_URL + "seabios.bin" },
+      vga_bios: { url: BASE_URL + "vgabios.bin" },
+      fda: { url: BASE_URL + "portfolio.img" },
+      autostart: true,
+      speaker: true,
+    });
+  }
+
+  boot();
+</script>
+
+</body>
+</html>
